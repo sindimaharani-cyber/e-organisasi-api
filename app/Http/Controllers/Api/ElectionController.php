@@ -1342,22 +1342,15 @@ class ElectionController extends Controller
             );
 
         $manager =
-            in_array(
-                $role,
-                [
-                    'admin',
-                    'pengurus',
-                    'officer',
-                ],
-                true
-            );
+            $role === 'admin';
 
         /*
-         * Admin/pengurus dapat melihat
-         * hasil untuk monitoring.
+         * Admin dapat melihat hasil
+         * untuk monitoring.
          *
-         * Mahasiswa hanya setelah
-         * hasil dipublikasikan.
+         * Pengurus dan mahasiswa hanya
+         * dapat melihat setelah hasil
+         * dipublikasikan.
          */
 
         if (

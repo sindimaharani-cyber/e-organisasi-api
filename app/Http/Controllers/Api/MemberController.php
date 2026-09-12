@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
@@ -17,14 +18,6 @@ class MemberController extends Controller
      * ================================================================
      * DAFTAR SEMUA ANGGOTA
      * ================================================================
-     *
-     * Khusus Admin.
-     *
-     * Mendukung:
-     * - pencarian nama / NIM / email
-     * - filter status
-     * - filter angkatan
-     * - filter divisi
      */
     public function index(Request $request): JsonResponse
     {
@@ -32,42 +25,16 @@ class MemberController extends Controller
             ->with('user')
             ->orderBy('name');
 
-        /*
-        |--------------------------------------------------------------------------
-        | SEARCH
-        |--------------------------------------------------------------------------
-        */
-
         if ($request->filled('search')) {
-            $search = trim(
-                $request->input('search')
-            );
+            $search = trim($request->input('search'));
 
             $query->where(function ($builder) use ($search) {
                 $builder
-                    ->where(
-                        'name',
-                        'like',
-                        "%{$search}%"
-                    )
-                    ->orWhere(
-                        'nim',
-                        'like',
-                        "%{$search}%"
-                    )
-                    ->orWhere(
-                        'email',
-                        'like',
-                        "%{$search}%"
-                    );
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('nim', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | FILTER STATUS
-        |--------------------------------------------------------------------------
-        */
 
         if ($request->filled('status')) {
             $query->where(
@@ -76,24 +43,12 @@ class MemberController extends Controller
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | FILTER ANGKATAN
-        |--------------------------------------------------------------------------
-        */
-
         if ($request->filled('generation')) {
             $query->where(
                 'generation',
                 $request->input('generation')
             );
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | FILTER DIVISI
-        |--------------------------------------------------------------------------
-        */
 
         if ($request->filled('division')) {
             $query->where(
@@ -102,13 +57,10 @@ class MemberController extends Controller
             );
         }
 
-        $members = $query->get();
-
         return response()->json([
             'success' => true,
-            'message' =>
-                'Data anggota berhasil diambil.',
-            'data' => $members,
+            'message' => 'Data anggota berhasil diambil.',
+            'data' => $query->get(),
         ]);
     }
 
@@ -126,15 +78,13 @@ class MemberController extends Controller
         if (!$member) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Data anggota tidak ditemukan.',
+                'message' => 'Data anggota tidak ditemukan.',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'message' =>
-                'Detail anggota berhasil diambil.',
+            'message' => 'Detail anggota berhasil diambil.',
             'data' => $member,
         ]);
     }
@@ -143,12 +93,6 @@ class MemberController extends Controller
      * ================================================================
      * TAMBAH DATA ANGGOTA
      * ================================================================
-     *
-     * Digunakan jika akun User sudah tersedia,
-     * tetapi data Member belum dibuat.
-     *
-     * Untuk membuat akun baru sekaligus Member,
-     * gunakan UserManagementController.
      */
     public function store(Request $request): JsonResponse
     {
@@ -159,83 +103,61 @@ class MemberController extends Controller
                 'exists:users,id',
                 'unique:members,user_id',
             ],
-
             'nim' => [
                 'required',
                 'string',
                 'max:50',
                 'unique:members,nim',
             ],
-
             'name' => [
                 'required',
                 'string',
                 'max:150',
             ],
-
             'email' => [
                 'nullable',
                 'email',
                 'max:150',
             ],
-
             'phone' => [
                 'nullable',
                 'string',
                 'max:30',
             ],
-
             'study_program' => [
                 'nullable',
                 'string',
                 'max:150',
             ],
-
             'generation' => [
                 'nullable',
                 'string',
                 'max:20',
             ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | IPK
-            |--------------------------------------------------------------------------
-            |
-            | IPK boleh kosong.
-            | Jika diisi harus angka 0.00 - 4.00.
-            |
-            */
-
             'gpa' => [
                 'nullable',
                 'numeric',
                 'between:0,4',
             ],
-
             'position' => [
                 'nullable',
                 'string',
                 'max:150',
             ],
-
             'division' => [
                 'nullable',
                 'string',
                 'max:150',
             ],
-
             'service_period' => [
                 'nullable',
                 'string',
                 'max:100',
             ],
-
             'address' => [
                 'nullable',
                 'string',
             ],
-
             'member_status' => [
                 'nullable',
                 Rule::in([
@@ -251,21 +173,18 @@ class MemberController extends Controller
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Akun user tidak ditemukan.',
+                'message' => 'Akun user tidak ditemukan.',
             ], 404);
         }
 
-        if (
-            !in_array(
-                $user->role,
-                [
-                    'pengurus',
-                    'mahasiswa',
-                ],
-                true
-            )
-        ) {
+        if (!in_array(
+            $user->role,
+            [
+                'pengurus',
+                'mahasiswa',
+            ],
+            true
+        )) {
             return response()->json([
                 'success' => false,
                 'message' =>
@@ -277,57 +196,26 @@ class MemberController extends Controller
 
         try {
             $member = Member::query()->create([
-                'user_id' =>
-                    $validated['user_id'],
-
-                'nim' =>
-                    $validated['nim'],
-
-                'name' =>
-                    $validated['name'],
-
-                'email' =>
-                    $validated['email']
-                    ?? $user->email,
-
-                'phone' =>
-                    $validated['phone']
-                    ?? null,
-
+                'user_id' => $validated['user_id'],
+                'nim' => $validated['nim'],
+                'name' => $validated['name'],
+                'email' => $validated['email'] ?? $user->email,
+                'phone' => $validated['phone'] ?? null,
                 'study_program' =>
-                    $validated['study_program']
-                    ?? null,
-
+                    $validated['study_program'] ?? null,
                 'generation' =>
-                    $validated['generation']
-                    ?? null,
-
-                /*
-                 * Simpan IPK.
-                 */
-                'gpa' =>
-                    $validated['gpa']
-                    ?? null,
-
+                    $validated['generation'] ?? null,
+                'gpa' => $validated['gpa'] ?? null,
                 'position' =>
-                    $validated['position']
-                    ?? null,
-
+                    $validated['position'] ?? null,
                 'division' =>
-                    $validated['division']
-                    ?? null,
-
+                    $validated['division'] ?? null,
                 'service_period' =>
-                    $validated['service_period']
-                    ?? null,
-
+                    $validated['service_period'] ?? null,
                 'address' =>
-                    $validated['address']
-                    ?? null,
-
+                    $validated['address'] ?? null,
                 'member_status' =>
-                    $validated['member_status']
-                    ?? 'active',
+                    $validated['member_status'] ?? 'active',
             ]);
 
             DB::commit();
@@ -346,15 +234,15 @@ class MemberController extends Controller
             return response()->json([
                 'success' => false,
                 'message' =>
-                    'Gagal menambahkan anggota: '
-                    . $error->getMessage(),
+                    'Gagal menambahkan anggota: ' .
+                    $error->getMessage(),
             ], 500);
         }
     }
 
     /**
      * ================================================================
-     * UPDATE DATA ANGGOTA
+     * UPDATE DATA ANGGOTA OLEH ADMIN
      * ================================================================
      */
     public function update(
@@ -368,8 +256,7 @@ class MemberController extends Controller
         if (!$member) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Data anggota tidak ditemukan.',
+                'message' => 'Data anggota tidak ditemukan.',
             ], 404);
         }
 
@@ -378,80 +265,60 @@ class MemberController extends Controller
                 'required',
                 'string',
                 'max:50',
-
                 Rule::unique(
                     'members',
                     'nim'
-                )->ignore(
-                    $member->id
-                ),
+                )->ignore($member->id),
             ],
-
             'name' => [
                 'required',
                 'string',
                 'max:150',
             ],
-
             'email' => [
                 'nullable',
                 'email',
                 'max:150',
             ],
-
             'phone' => [
                 'nullable',
                 'string',
                 'max:30',
             ],
-
             'study_program' => [
                 'nullable',
                 'string',
                 'max:150',
             ],
-
             'generation' => [
                 'nullable',
                 'string',
                 'max:20',
             ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | IPK
-            |--------------------------------------------------------------------------
-            */
-
             'gpa' => [
                 'nullable',
                 'numeric',
                 'between:0,4',
             ],
-
             'position' => [
                 'nullable',
                 'string',
                 'max:150',
             ],
-
             'division' => [
                 'nullable',
                 'string',
                 'max:150',
             ],
-
             'service_period' => [
                 'nullable',
                 'string',
                 'max:100',
             ],
-
             'address' => [
                 'nullable',
                 'string',
             ],
-
             'member_status' => [
                 'required',
                 Rule::in([
@@ -464,72 +331,31 @@ class MemberController extends Controller
         DB::beginTransaction();
 
         try {
-            /*
-            |--------------------------------------------------------------------------
-            | UPDATE MEMBER
-            |--------------------------------------------------------------------------
-            */
-
             $member->update([
-                'nim' =>
-                    $validated['nim'],
-
-                'name' =>
-                    $validated['name'],
-
-                'email' =>
-                    $validated['email']
-                    ?? null,
-
-                'phone' =>
-                    $validated['phone']
-                    ?? null,
-
+                'nim' => $validated['nim'],
+                'name' => $validated['name'],
+                'email' => $validated['email'] ?? null,
+                'phone' => $validated['phone'] ?? null,
                 'study_program' =>
-                    $validated['study_program']
-                    ?? null,
-
+                    $validated['study_program'] ?? null,
                 'generation' =>
-                    $validated['generation']
-                    ?? null,
-
-                /*
-                 * Update IPK.
-                 */
-                'gpa' =>
-                    $validated['gpa']
-                    ?? null,
-
+                    $validated['generation'] ?? null,
+                'gpa' => $validated['gpa'] ?? null,
                 'position' =>
-                    $validated['position']
-                    ?? null,
-
+                    $validated['position'] ?? null,
                 'division' =>
-                    $validated['division']
-                    ?? null,
-
+                    $validated['division'] ?? null,
                 'service_period' =>
-                    $validated['service_period']
-                    ?? null,
-
+                    $validated['service_period'] ?? null,
                 'address' =>
-                    $validated['address']
-                    ?? null,
-
+                    $validated['address'] ?? null,
                 'member_status' =>
                     $validated['member_status'],
             ]);
 
-            /*
-            |--------------------------------------------------------------------------
-            | SINKRONKAN NAMA DENGAN USER
-            |--------------------------------------------------------------------------
-            */
-
             if ($member->user) {
                 $member->user->update([
-                    'name' =>
-                        $validated['name'],
+                    'name' => $validated['name'],
                 ]);
             }
 
@@ -550,8 +376,8 @@ class MemberController extends Controller
             return response()->json([
                 'success' => false,
                 'message' =>
-                    'Gagal memperbarui anggota: '
-                    . $error->getMessage(),
+                    'Gagal memperbarui anggota: ' .
+                    $error->getMessage(),
             ], 500);
         }
     }
@@ -560,9 +386,6 @@ class MemberController extends Controller
      * ================================================================
      * HAPUS DATA MEMBER
      * ================================================================
-     *
-     * Akun User tidak ikut dihapus.
-     * Penghapusan akun dilakukan melalui UserManagementController.
      */
     public function destroy(int $id): JsonResponse
     {
@@ -572,31 +395,22 @@ class MemberController extends Controller
         if (!$member) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Data anggota tidak ditemukan.',
+                'message' => 'Data anggota tidak ditemukan.',
             ], 404);
         }
 
         DB::beginTransaction();
 
         try {
-            /*
-            |--------------------------------------------------------------------------
-            | HAPUS FOTO LAMA
-            |--------------------------------------------------------------------------
-            */
-
             if (
                 $member->profile_photo &&
-                Storage::disk('public')
-                    ->exists(
-                        $member->profile_photo
-                    )
+                Storage::disk('public')->exists(
+                    $member->profile_photo
+                )
             ) {
-                Storage::disk('public')
-                    ->delete(
-                        $member->profile_photo
-                    );
+                Storage::disk('public')->delete(
+                    $member->profile_photo
+                );
             }
 
             $member->delete();
@@ -605,8 +419,7 @@ class MemberController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' =>
-                    'Data anggota berhasil dihapus.',
+                'message' => 'Data anggota berhasil dihapus.',
             ]);
         } catch (\Throwable $error) {
             DB::rollBack();
@@ -614,8 +427,8 @@ class MemberController extends Controller
             return response()->json([
                 'success' => false,
                 'message' =>
-                    'Gagal menghapus anggota: '
-                    . $error->getMessage(),
+                    'Gagal menghapus anggota: ' .
+                    $error->getMessage(),
             ], 500);
         }
     }
@@ -632,50 +445,27 @@ class MemberController extends Controller
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Pengguna belum login.',
+                'message' => 'Pengguna belum login.',
             ], 401);
         }
 
         $member = Member::query()
-            ->where(
-                'user_id',
-                $user->id
-            )
+            ->where('user_id', $user->id)
             ->first();
 
         return response()->json([
             'success' => true,
             'message' =>
                 'Profil pengguna berhasil diambil.',
-
             'data' => [
                 'user' => [
-                    'id' =>
-                        $user->id,
-
-                    'name' =>
-                        $user->name,
-
-                    'email' =>
-                        $user->email,
-
-                    'role' =>
-                        $user->role,
-
-                    'status' =>
-                        $user->status,
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'status' => $user->status,
                 ],
-
-                /*
-                 * GPA ikut terbaca di sini karena
-                 * seluruh object Member dikirim.
-                 *
-                 * Tetapi mahasiswa tidak dapat
-                 * mengubahnya melalui updateProfile().
-                 */
-                'member' =>
-                    $member,
+                'member' => $member,
             ],
         ]);
     }
@@ -685,11 +475,22 @@ class MemberController extends Controller
      * UPDATE PROFIL SENDIRI
      * ================================================================
      *
-     * Mahasiswa/Pengurus hanya boleh memperbarui
-     * data profil pribadi tertentu.
+     * Pengurus/Mahasiswa boleh mengubah:
+     * - nama
+     * - nomor HP
+     * - alamat
+     * - IPK terbaru
      *
-     * Role, status, jabatan, divisi, angkatan,
-     * dan IPK tidak boleh diubah sendiri.
+     * Semua role boleh mengganti password.
+     *
+     * Data berikut tetap tidak boleh diubah sendiri:
+     * - email
+     * - NIM
+     * - role
+     * - status
+     * - angkatan
+     * - jabatan
+     * - divisi
      */
     public function updateProfile(
         Request $request
@@ -699,19 +500,60 @@ class MemberController extends Controller
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Pengguna belum login.',
+                'message' => 'Pengguna belum login.',
             ], 401);
         }
 
+        $validated = $request->validate([
+            'name' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:150',
+            ],
+            'phone' => [
+                'sometimes',
+                'nullable',
+                'string',
+                'max:30',
+            ],
+            'address' => [
+                'sometimes',
+                'nullable',
+                'string',
+            ],
+            'gpa' => [
+                'sometimes',
+                'nullable',
+                'numeric',
+                'between:0,4',
+            ],
+            'current_password' => [
+                'required_with:password',
+                'nullable',
+                'string',
+            ],
+            'password' => [
+                'sometimes',
+                'required',
+                'string',
+                'min:8',
+                'confirmed',
+                'different:current_password',
+            ],
+        ]);
+
         $member = Member::query()
-            ->where(
-                'user_id',
-                $user->id
-            )
+            ->where('user_id', $user->id)
             ->first();
 
-        if (!$member) {
+        $wantsMemberUpdate =
+            $request->has('name') ||
+            $request->has('phone') ||
+            $request->has('address') ||
+            $request->has('gpa');
+
+        if ($wantsMemberUpdate && !$member) {
             return response()->json([
                 'success' => false,
                 'message' =>
@@ -719,83 +561,107 @@ class MemberController extends Controller
             ], 404);
         }
 
-        /*
-         * PERHATIKAN:
-         *
-         * Tidak ada gpa di sini.
-         *
-         * Jadi mahasiswa/pengurus tidak dapat
-         * mengubah IPK miliknya sendiri.
-         */
-        $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:150',
-            ],
-
-            'phone' => [
-                'nullable',
-                'string',
-                'max:30',
-            ],
-
-            'address' => [
-                'nullable',
-                'string',
-            ],
-        ]);
+        if ($request->filled('password')) {
+            if (
+                !$request->filled('current_password') ||
+                !Hash::check(
+                    $request->input('current_password'),
+                    $user->password
+                )
+            ) {
+                return response()->json([
+                    'success' => false,
+                    'message' =>
+                        'Password saat ini tidak sesuai.',
+                    'errors' => [
+                        'current_password' => [
+                            'Password saat ini tidak sesuai.',
+                        ],
+                    ],
+                ], 422);
+            }
+        }
 
         DB::beginTransaction();
 
         try {
-            $member->update([
-                'name' =>
-                    $validated['name'],
+            if ($member && $wantsMemberUpdate) {
+                $memberUpdates = [];
 
-                'phone' =>
-                    $validated['phone']
-                    ?? null,
+                if ($request->has('name')) {
+                    $memberUpdates['name'] =
+                        $validated['name'];
+                }
 
-                'address' =>
-                    $validated['address']
-                    ?? null,
-            ]);
+                if ($request->has('phone')) {
+                    $memberUpdates['phone'] =
+                        $validated['phone'] ?? null;
+                }
 
-            $user->update([
-                'name' =>
-                    $validated['name'],
-            ]);
+                if ($request->has('address')) {
+                    $memberUpdates['address'] =
+                        $validated['address'] ?? null;
+                }
+
+                if ($request->has('gpa')) {
+                    $memberUpdates['gpa'] =
+                        $validated['gpa'] ?? null;
+                }
+
+                if (!empty($memberUpdates)) {
+                    $member->update($memberUpdates);
+                }
+            }
+
+            if ($request->has('name')) {
+                $user->name = $validated['name'];
+            }
+
+            if ($request->filled('password')) {
+                $user->password = Hash::make(
+                    $validated['password']
+                );
+            }
+
+            if ($user->isDirty()) {
+                $user->save();
+            }
 
             DB::commit();
 
-            $member->refresh();
+            if ($member) {
+                $member->refresh();
+            }
+
+            $user->refresh();
+
+            $profileChanged = $wantsMemberUpdate;
+            $passwordChanged =
+                $request->filled('password');
+
+            if ($profileChanged && $passwordChanged) {
+                $message =
+                    'Profil dan password berhasil diperbarui.';
+            } elseif ($passwordChanged) {
+                $message =
+                    'Password berhasil diperbarui.';
+            } else {
+                $message =
+                    'Profil berhasil diperbarui.';
+            }
 
             return response()->json([
                 'success' => true,
-                'message' =>
-                    'Profil berhasil diperbarui.',
-
+                'message' => $message,
                 'data' => [
                     'user' => [
-                        'id' =>
-                            $user->id,
-
-                        'name' =>
-                            $user->name,
-
-                        'email' =>
-                            $user->email,
-
-                        'role' =>
-                            $user->role,
-
-                        'status' =>
-                            $user->status,
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'role' => $user->role,
+                        'status' => $user->status,
                     ],
-
-                    'member' =>
-                        $member,
+                    'member' => $member,
                 ],
             ]);
         } catch (\Throwable $error) {
@@ -804,8 +670,8 @@ class MemberController extends Controller
             return response()->json([
                 'success' => false,
                 'message' =>
-                    'Gagal memperbarui profil: '
-                    . $error->getMessage(),
+                    'Gagal memperbarui profil: ' .
+                    $error->getMessage(),
             ], 500);
         }
     }
@@ -823,16 +689,12 @@ class MemberController extends Controller
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Pengguna belum login.',
+                'message' => 'Pengguna belum login.',
             ], 401);
         }
 
         $member = Member::query()
-            ->where(
-                'user_id',
-                $user->id
-            )
+            ->where('user_id', $user->id)
             ->first();
 
         if (!$member) {
@@ -853,30 +715,16 @@ class MemberController extends Controller
         ]);
 
         try {
-            /*
-            |--------------------------------------------------------------------------
-            | HAPUS FOTO LAMA
-            |--------------------------------------------------------------------------
-            */
-
             if (
                 $member->profile_photo &&
-                Storage::disk('public')
-                    ->exists(
-                        $member->profile_photo
-                    )
+                Storage::disk('public')->exists(
+                    $member->profile_photo
+                )
             ) {
-                Storage::disk('public')
-                    ->delete(
-                        $member->profile_photo
-                    );
+                Storage::disk('public')->delete(
+                    $member->profile_photo
+                );
             }
-
-            /*
-            |--------------------------------------------------------------------------
-            | SIMPAN FOTO BARU
-            |--------------------------------------------------------------------------
-            */
 
             $path = $request
                 ->file('photo')
@@ -886,32 +734,25 @@ class MemberController extends Controller
                 );
 
             $member->update([
-                'profile_photo' =>
-                    $path,
+                'profile_photo' => $path,
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' =>
                     'Foto profil berhasil diperbarui.',
-
                 'data' => [
-                    'profile_photo' =>
-                        $path,
-
+                    'profile_photo' => $path,
                     'profile_photo_url' =>
-                        asset(
-                            'storage/' .
-                            $path
-                        ),
+                        asset('storage/' . $path),
                 ],
             ]);
         } catch (\Throwable $error) {
             return response()->json([
                 'success' => false,
                 'message' =>
-                    'Gagal mengunggah foto: '
-                    . $error->getMessage(),
+                    'Gagal mengunggah foto: ' .
+                    $error->getMessage(),
             ], 500);
         }
     }
@@ -930,21 +771,18 @@ class MemberController extends Controller
         if (!$member) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Anggota tidak ditemukan.',
+                'message' => 'Anggota tidak ditemukan.',
             ], 404);
         }
 
         DB::transaction(function () use ($member) {
             $member->update([
-                'member_status' =>
-                    'active',
+                'member_status' => 'active',
             ]);
 
             if ($member->user) {
                 $member->user->update([
-                    'status' =>
-                        'active',
+                    'status' => 'active',
                 ]);
             }
         });
@@ -970,26 +808,20 @@ class MemberController extends Controller
         if (!$member) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Anggota tidak ditemukan.',
+                'message' => 'Anggota tidak ditemukan.',
             ], 404);
         }
 
         DB::transaction(function () use ($member) {
             $member->update([
-                'member_status' =>
-                    'inactive',
+                'member_status' => 'inactive',
             ]);
 
             if ($member->user) {
                 $member->user->update([
-                    'status' =>
-                        'inactive',
+                    'status' => 'inactive',
                 ]);
 
-                /*
-                 * Hapus token supaya akun langsung logout.
-                 */
                 $member->user
                     ->tokens()
                     ->delete();

@@ -34,7 +34,7 @@ class CandidateApplicationController extends Controller
     | DAFTAR SEMUA PENGAJUAN
     |--------------------------------------------------------------------------
     |
-    | Untuk admin / pengurus.
+    | Untuk Admin.
     |
     */
 
@@ -153,7 +153,7 @@ class CandidateApplicationController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | MAHASISWA MENDAFTAR
+    | ANGGOTA MENDAFTAR
     |--------------------------------------------------------------------------
     */
 
@@ -165,22 +165,33 @@ class CandidateApplicationController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | HARUS MAHASISWA
+        | ROLE YANG BOLEH MENDAFTAR
         |--------------------------------------------------------------------------
         */
 
-        if (
+        $role =
             strtolower(
                 trim(
                     (string) $user->role
                 )
-            ) !== 'mahasiswa'
+            );
+
+        if (
+            !in_array(
+                $role,
+                [
+                    'mahasiswa',
+                    'pengurus',
+                    'officer',
+                ],
+                true
+            )
         ) {
             return response()->json([
                 'success' => false,
 
                 'message' =>
-                    'Hanya mahasiswa yang dapat mengajukan diri sebagai calon Bupati.',
+                    'Hanya mahasiswa atau pengurus aktif yang dapat mengajukan diri sebagai calon Bupati.',
             ], 403);
         }
 
@@ -942,6 +953,21 @@ class CandidateApplicationController extends Controller
         $reviewer =
             $request->user();
 
+        if (
+            !$reviewer ||
+            strtolower(
+                trim(
+                    (string) $reviewer->role
+                )
+            ) !== 'admin'
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' =>
+                    'Hanya Admin yang dapat memverifikasi pengajuan calon Bupati.',
+            ], 403);
+        }
+
         $election =
             Election::query()
                 ->find($electionId);
@@ -972,7 +998,7 @@ class CandidateApplicationController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | ADMIN/PENGURUS MENENTUKAN NOMOR URUT
+        | ADMIN MENENTUKAN NOMOR URUT
         |--------------------------------------------------------------------------
         */
 
@@ -1053,9 +1079,9 @@ class CandidateApplicationController extends Controller
                         |
                         | Penting:
                         |
-                        | Walaupun mahasiswa sebelumnya pernah layak,
+                        | Walaupun anggota sebelumnya pernah memenuhi persyaratan,
                         | admin hanya boleh menyetujui jika saat ini
-                        | mahasiswa tetap memenuhi persyaratan.
+                        | anggota tetap memenuhi persyaratan.
                         |
                         */
 
@@ -1209,14 +1235,14 @@ class CandidateApplicationController extends Controller
                     response()->json([
                         'success' => false,
                         'message' =>
-                            'Pengajuan tidak dapat disetujui karena mahasiswa tidak lagi memenuhi persyaratan calon Bupati.',
+                            'Pengajuan tidak dapat disetujui karena anggota tidak lagi memenuhi persyaratan calon Bupati.',
                     ], 422),
 
                 'ALREADY_CANDIDATE' =>
                     response()->json([
                         'success' => false,
                         'message' =>
-                            'Mahasiswa tersebut sudah menjadi calon Bupati resmi.',
+                            'Anggota tersebut sudah menjadi calon Bupati resmi.',
                     ], 422),
 
                 default =>
@@ -1236,6 +1262,24 @@ class CandidateApplicationController extends Controller
         int $electionId,
         int $applicationId
     ): JsonResponse {
+        $reviewer =
+            $request->user();
+
+        if (
+            !$reviewer ||
+            strtolower(
+                trim(
+                    (string) $reviewer->role
+                )
+            ) !== 'admin'
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' =>
+                    'Hanya Admin yang dapat memverifikasi pengajuan calon Bupati.',
+            ], 403);
+        }
+
         $validated =
             $request->validate([
                 'rejection_reason' => [

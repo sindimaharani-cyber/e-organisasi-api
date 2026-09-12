@@ -1279,8 +1279,18 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | PEMILIHAN PENGURUS
+                | PEMILIHAN PENGURUS - PARTISIPASI
                 |--------------------------------------------------------------------------
+                |
+                | Pengurus tidak mengelola proses pemilihan.
+                | Pengurus berpartisipasi sebagai anggota HIMATIF aktif:
+                | - melihat pemilihan
+                | - memeriksa persyaratan calon
+                | - mengajukan diri sebagai calon Bupati
+                | - melihat kandidat
+                | - melakukan voting
+                | - melihat hasil setelah dipublikasikan
+                |
                 */
 
                 Route::get(
@@ -1291,11 +1301,11 @@ Route::middleware('auth:sanctum')
                     ]
                 );
 
-                Route::post(
-                    '/elections',
+                Route::get(
+                    '/elections/active',
                     [
                         ElectionController::class,
-                        'store'
+                        'active'
                     ]
                 );
 
@@ -1307,149 +1317,101 @@ Route::middleware('auth:sanctum')
                     ]
                 )->whereNumber('id');
 
-                Route::put(
-                    '/elections/{id}',
-                    [
-                        ElectionController::class,
-                        'update'
-                    ]
-                )->whereNumber('id');
-
-                Route::patch(
-                    '/elections/{id}',
-                    [
-                        ElectionController::class,
-                        'update'
-                    ]
-                )->whereNumber('id');
-
-                Route::delete(
-                    '/elections/{id}',
-                    [
-                        ElectionController::class,
-                        'destroy'
-                    ]
-                )->whereNumber('id');
-
-                Route::patch(
-                    '/elections/{id}/status',
-                    [
-                        ElectionController::class,
-                        'updateStatus'
-                    ]
-                )->whereNumber('id');
-
-                Route::get(
-                    '/elections/{electionId}/candidate-eligibility',
-                    [
-                        CandidateEligibilityController::class,
-                        'index'
-                    ]
-                )->whereNumber('electionId');
-
                 Route::get(
                     '/elections/{electionId}/candidates',
                     [
                         ElectionCandidateController::class,
                         'index'
+                    ]
+                )->whereNumber('electionId');
+
+                /*
+                |--------------------------------------------------------------------------
+                | PEMERIKSAAN PERSYARATAN CALON BUPATI
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get(
+                    '/elections/{electionId}/eligibility',
+                    [
+                        CandidateEligibilityController::class,
+                        'myEligibility'
+                    ]
+                )->whereNumber('electionId');
+
+                /*
+                |--------------------------------------------------------------------------
+                | PENGAJUAN CALON BUPATI
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get(
+                    '/elections/{electionId}/candidate-application',
+                    [
+                        CandidateApplicationController::class,
+                        'myApplication'
                     ]
                 )->whereNumber('electionId');
 
                 Route::post(
-                    '/elections/{electionId}/candidates',
+                    '/elections/{electionId}/candidate-application',
                     [
-                        ElectionCandidateController::class,
+                        CandidateApplicationController::class,
                         'store'
                     ]
                 )->whereNumber('electionId');
 
                 Route::put(
-                    '/elections/{electionId}/candidates/{candidateId}',
-                    [
-                        ElectionCandidateController::class,
-                        'update'
-                    ]
-                )
-                    ->whereNumber('electionId')
-                    ->whereNumber('candidateId');
-
-                Route::patch(
-                    '/elections/{electionId}/candidates/{candidateId}',
-                    [
-                        ElectionCandidateController::class,
-                        'update'
-                    ]
-                )
-                    ->whereNumber('electionId')
-                    ->whereNumber('candidateId');
-
-                Route::delete(
-                    '/elections/{electionId}/candidates/{candidateId}',
-                    [
-                        ElectionCandidateController::class,
-                        'destroy'
-                    ]
-                )
-                    ->whereNumber('electionId')
-                    ->whereNumber('candidateId');
-
-                Route::get(
-                    '/elections/{electionId}/candidate-applications',
+                    '/elections/{electionId}/candidate-application',
                     [
                         CandidateApplicationController::class,
-                        'index'
+                        'update'
                     ]
                 )->whereNumber('electionId');
 
-                Route::post(
-                    '/elections/{electionId}/candidate-applications/{applicationId}/approve',
+                Route::patch(
+                    '/elections/{electionId}/candidate-application',
                     [
                         CandidateApplicationController::class,
-                        'approve'
+                        'update'
                     ]
-                )
-                    ->whereNumber('electionId')
-                    ->whereNumber('applicationId');
+                )->whereNumber('electionId');
 
-                Route::post(
-                    '/elections/{electionId}/candidate-applications/{applicationId}/reject',
+                Route::delete(
+                    '/elections/{electionId}/candidate-application',
                     [
                         CandidateApplicationController::class,
-                        'reject'
+                        'destroy'
                     ]
-                )
-                    ->whereNumber('electionId')
-                    ->whereNumber('applicationId');
+                )->whereNumber('electionId');
 
-                Route::post(
-                    '/elections/{id}/sync-voters',
+                /*
+                |--------------------------------------------------------------------------
+                | HAK PILIH DAN VOTING
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get(
+                    '/elections/{id}/voting-status',
                     [
                         ElectionController::class,
-                        'syncVoters'
+                        'votingStatus'
                     ]
                 )->whereNumber('id');
 
                 Route::get(
-                    '/elections/{id}/voters',
+                    '/elections/{id}/my-status',
                     [
                         ElectionController::class,
-                        'voters'
+                        'myVotingStatus'
                     ]
                 )->whereNumber('id');
 
                 Route::post(
-                    '/elections/{id}/open-voting',
+                    '/elections/{id}/vote',
                     [
                         ElectionController::class,
-                        'openVoting'
-                    ]
-                )->whereNumber('id');
-
-                Route::post(
-                    '/elections/{id}/close-voting',
-                    [
-                        ElectionController::class,
-                        'closeVoting'
+                        'vote'
                     ]
                 )->whereNumber('id');
 
