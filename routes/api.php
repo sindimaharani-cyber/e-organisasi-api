@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\ActivityRegistrationController;
+use App\Http\Controllers\Api\RegistrationAttendanceController;
 use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\CertificateController;
 use App\Http\Controllers\Api\OrganizationStructureController;
@@ -47,7 +48,6 @@ Route::get('/login', function () {
 */
 
 Route::prefix('auth')->group(function () {
-
     Route::post(
         '/login',
         [
@@ -220,7 +220,7 @@ Route::middleware('auth:sanctum')
 
         /*
         |--------------------------------------------------------------------------
-        | SERTIFIKAT USER
+        | SERTIFIKAT USER LOGIN
         |--------------------------------------------------------------------------
         */
 
@@ -234,7 +234,7 @@ Route::middleware('auth:sanctum')
 
         /*
         |--------------------------------------------------------------------------
-        | PEMILIHAN - USER LOGIN
+        | PEMILIHAN USER LOGIN
         |--------------------------------------------------------------------------
         */
 
@@ -358,16 +358,8 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | DOKUMENTASI KEGIATAN - ADMIN
+                | DOKUMENTASI KEGIATAN ADMIN
                 |--------------------------------------------------------------------------
-                |
-                | Admin:
-                | - Lihat
-                | - Download / buka file
-                | - Upload
-                | - Edit
-                | - Hapus
-                |
                 */
 
                 Route::get(
@@ -428,16 +420,8 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | ARSIP SURAT - ADMIN
+                | ARSIP SURAT ADMIN
                 |--------------------------------------------------------------------------
-                |
-                | Admin:
-                | - Lihat
-                | - Download / buka file
-                | - Upload
-                | - Edit
-                | - Hapus
-                |
                 */
 
                 Route::get(
@@ -622,7 +606,7 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | KEGIATAN
+                | KEGIATAN ADMIN
                 |--------------------------------------------------------------------------
                 */
 
@@ -668,7 +652,7 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | PESERTA KEGIATAN
+                | PESERTA KEGIATAN ADMIN
                 |--------------------------------------------------------------------------
                 */
 
@@ -682,7 +666,37 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | SERTIFIKAT
+                | DAFTAR HADIR ADMIN
+                |--------------------------------------------------------------------------
+                |
+                | GET
+                | Mengambil peserta terdaftar beserta status absensi.
+                |
+                | POST
+                | Menyimpan status:
+                | present / absent / unrecorded.
+                |
+                */
+
+                Route::get(
+                    '/activities/{activityId}/attendance',
+                    [
+                        RegistrationAttendanceController::class,
+                        'attendanceParticipants'
+                    ]
+                )->whereNumber('activityId');
+
+                Route::post(
+                    '/activities/{activityId}/attendance',
+                    [
+                        RegistrationAttendanceController::class,
+                        'saveAttendance'
+                    ]
+                )->whereNumber('activityId');
+
+                /*
+                |--------------------------------------------------------------------------
+                | SERTIFIKAT ADMIN
                 |--------------------------------------------------------------------------
                 */
 
@@ -693,6 +707,22 @@ Route::middleware('auth:sanctum')
                         'participants'
                     ]
                 )->whereNumber('id');
+
+                Route::post(
+                    '/activities/{activityId}/certificate-template',
+                    [
+                        CertificateController::class,
+                        'uploadTemplate'
+                    ]
+                )->whereNumber('activityId');
+
+                Route::post(
+                    '/activities/{activityId}/certificates/generate',
+                    [
+                        CertificateController::class,
+                        'generateAll'
+                    ]
+                )->whereNumber('activityId');
 
                 Route::post(
                     '/activities/{activityId}/certificates/{userId}',
@@ -722,7 +752,7 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | PENGUMUMAN
+                | PENGUMUMAN ADMIN
                 |--------------------------------------------------------------------------
                 */
 
@@ -776,7 +806,7 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | PROFIL ORGANISASI
+                | PROFIL ORGANISASI ADMIN
                 |--------------------------------------------------------------------------
                 */
 
@@ -874,6 +904,12 @@ Route::middleware('auth:sanctum')
                     ]
                 )->whereNumber('id');
 
+                /*
+                |--------------------------------------------------------------------------
+                | KELAYAKAN KANDIDAT
+                |--------------------------------------------------------------------------
+                */
+
                 Route::get(
                     '/elections/{electionId}/candidate-eligibility',
                     [
@@ -881,6 +917,12 @@ Route::middleware('auth:sanctum')
                         'index'
                     ]
                 )->whereNumber('electionId');
+
+                /*
+                |--------------------------------------------------------------------------
+                | KANDIDAT
+                |--------------------------------------------------------------------------
+                */
 
                 Route::get(
                     '/elections/{electionId}/candidates',
@@ -928,6 +970,12 @@ Route::middleware('auth:sanctum')
                     ->whereNumber('electionId')
                     ->whereNumber('candidateId');
 
+                /*
+                |--------------------------------------------------------------------------
+                | PENGAJUAN KANDIDAT
+                |--------------------------------------------------------------------------
+                */
+
                 Route::get(
                     '/elections/{electionId}/candidate-applications',
                     [
@@ -956,6 +1004,12 @@ Route::middleware('auth:sanctum')
                     ->whereNumber('electionId')
                     ->whereNumber('applicationId');
 
+                /*
+                |--------------------------------------------------------------------------
+                | PEMILIH
+                |--------------------------------------------------------------------------
+                */
+
                 Route::post(
                     '/elections/{id}/sync-voters',
                     [
@@ -972,6 +1026,12 @@ Route::middleware('auth:sanctum')
                     ]
                 )->whereNumber('id');
 
+                /*
+                |--------------------------------------------------------------------------
+                | BUKA / TUTUP VOTING
+                |--------------------------------------------------------------------------
+                */
+
                 Route::post(
                     '/elections/{id}/open-voting',
                     [
@@ -987,6 +1047,12 @@ Route::middleware('auth:sanctum')
                         'closeVoting'
                     ]
                 )->whereNumber('id');
+
+                /*
+                |--------------------------------------------------------------------------
+                | HASIL PEMILIHAN
+                |--------------------------------------------------------------------------
+                */
 
                 Route::get(
                     '/elections/{id}/results',
@@ -1023,7 +1089,7 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | KEUANGAN PENGURUS - HANYA LIHAT
+                | KEUANGAN PENGURUS
                 |--------------------------------------------------------------------------
                 */
 
@@ -1053,16 +1119,8 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | DOKUMENTASI KEGIATAN - PENGURUS
+                | DOKUMENTASI PENGURUS
                 |--------------------------------------------------------------------------
-                |
-                | Pengurus:
-                | - Lihat
-                | - Download / buka file
-                | - Tidak bisa upload
-                | - Tidak bisa edit
-                | - Tidak bisa hapus
-                |
                 */
 
                 Route::get(
@@ -1091,16 +1149,8 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | ARSIP SURAT - PENGURUS
+                | ARSIP SURAT PENGURUS
                 |--------------------------------------------------------------------------
-                |
-                | Pengurus:
-                | - Lihat
-                | - Download / buka file
-                | - Tidak bisa upload
-                | - Tidak bisa edit
-                | - Tidak bisa hapus
-                |
                 */
 
                 Route::get(
@@ -1129,7 +1179,7 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | KEGIATAN
+                | KEGIATAN PENGURUS
                 |--------------------------------------------------------------------------
                 */
 
@@ -1167,7 +1217,7 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | PESERTA KEGIATAN
+                | PESERTA PENGURUS
                 |--------------------------------------------------------------------------
                 */
 
@@ -1181,7 +1231,29 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | SERTIFIKAT
+                | DAFTAR HADIR PENGURUS
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get(
+                    '/activities/{activityId}/attendance',
+                    [
+                        RegistrationAttendanceController::class,
+                        'attendanceParticipants'
+                    ]
+                )->whereNumber('activityId');
+
+                Route::post(
+                    '/activities/{activityId}/attendance',
+                    [
+                        RegistrationAttendanceController::class,
+                        'saveAttendance'
+                    ]
+                )->whereNumber('activityId');
+
+                /*
+                |--------------------------------------------------------------------------
+                | SERTIFIKAT PENGURUS
                 |--------------------------------------------------------------------------
                 */
 
@@ -1193,9 +1265,51 @@ Route::middleware('auth:sanctum')
                     ]
                 )->whereNumber('id');
 
+                Route::post(
+                    '/activities/{activityId}/certificate-template',
+                    [
+                        CertificateController::class,
+                        'uploadTemplate'
+                    ]
+                )->whereNumber('activityId');
+
+                Route::post(
+                    '/activities/{activityId}/certificates/generate',
+                    [
+                        CertificateController::class,
+                        'generateAll'
+                    ]
+                )->whereNumber('activityId');
+
+                Route::post(
+                    '/activities/{activityId}/certificates/{userId}',
+                    [
+                        CertificateController::class,
+                        'issue'
+                    ]
+                )
+                    ->whereNumber('activityId')
+                    ->whereNumber('userId');
+
+                Route::post(
+                    '/certificates/{certificateId}/upload',
+                    [
+                        CertificateController::class,
+                        'uploadFile'
+                    ]
+                )->whereNumber('certificateId');
+
+                Route::patch(
+                    '/certificates/{certificateId}/revoke',
+                    [
+                        CertificateController::class,
+                        'revoke'
+                    ]
+                )->whereNumber('certificateId');
+
                 /*
                 |--------------------------------------------------------------------------
-                | PENGUMUMAN
+                | PENGUMUMAN PENGURUS
                 |--------------------------------------------------------------------------
                 */
 
@@ -1249,7 +1363,7 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | PROFIL ORGANISASI
+                | PROFIL ORGANISASI PENGURUS
                 |--------------------------------------------------------------------------
                 */
 
@@ -1279,18 +1393,8 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | PEMILIHAN PENGURUS - PARTISIPASI
+                | PEMILIHAN PENGURUS
                 |--------------------------------------------------------------------------
-                |
-                | Pengurus tidak mengelola proses pemilihan.
-                | Pengurus berpartisipasi sebagai anggota HIMATIF aktif:
-                | - melihat pemilihan
-                | - memeriksa persyaratan calon
-                | - mengajukan diri sebagai calon Bupati
-                | - melihat kandidat
-                | - melakukan voting
-                | - melihat hasil setelah dipublikasikan
-                |
                 */
 
                 Route::get(
@@ -1325,12 +1429,6 @@ Route::middleware('auth:sanctum')
                     ]
                 )->whereNumber('electionId');
 
-                /*
-                |--------------------------------------------------------------------------
-                | PEMERIKSAAN PERSYARATAN CALON BUPATI
-                |--------------------------------------------------------------------------
-                */
-
                 Route::get(
                     '/elections/{electionId}/eligibility',
                     [
@@ -1338,12 +1436,6 @@ Route::middleware('auth:sanctum')
                         'myEligibility'
                     ]
                 )->whereNumber('electionId');
-
-                /*
-                |--------------------------------------------------------------------------
-                | PENGAJUAN CALON BUPATI
-                |--------------------------------------------------------------------------
-                */
 
                 Route::get(
                     '/elections/{electionId}/candidate-application',
@@ -1384,12 +1476,6 @@ Route::middleware('auth:sanctum')
                         'destroy'
                     ]
                 )->whereNumber('electionId');
-
-                /*
-                |--------------------------------------------------------------------------
-                | HAK PILIH DAN VOTING
-                |--------------------------------------------------------------------------
-                */
 
                 Route::get(
                     '/elections/{id}/voting-status',
@@ -1450,18 +1536,8 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | DOKUMENTASI KEGIATAN - MAHASISWA
+                | DOKUMENTASI MAHASISWA
                 |--------------------------------------------------------------------------
-                |
-                | Mahasiswa:
-                | - Lihat dokumentasi
-                | - Download / buka file
-                | - Tidak bisa upload
-                | - Tidak bisa edit
-                | - Tidak bisa hapus
-                |
-                | Mahasiswa TIDAK memiliki route Arsip Surat.
-                |
                 */
 
                 Route::get(
@@ -1490,7 +1566,7 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | KEGIATAN
+                | PENDAFTARAN KEGIATAN
                 |--------------------------------------------------------------------------
                 */
 
@@ -1528,7 +1604,7 @@ Route::middleware('auth:sanctum')
 
                 /*
                 |--------------------------------------------------------------------------
-                | SERTIFIKAT
+                | SERTIFIKAT MAHASISWA
                 |--------------------------------------------------------------------------
                 */
 
@@ -1592,12 +1668,6 @@ Route::middleware('auth:sanctum')
                     ]
                 )->whereNumber('electionId');
 
-                /*
-                |--------------------------------------------------------------------------
-                | CEK KELAYAKAN CALON BUPATI
-                |--------------------------------------------------------------------------
-                */
-
                 Route::get(
                     '/elections/{electionId}/eligibility',
                     [
@@ -1605,12 +1675,6 @@ Route::middleware('auth:sanctum')
                         'myEligibility'
                     ]
                 )->whereNumber('electionId');
-
-                /*
-                |--------------------------------------------------------------------------
-                | PENDAFTARAN CALON KANDIDAT
-                |--------------------------------------------------------------------------
-                */
 
                 Route::get(
                     '/elections/{electionId}/candidate-application',
@@ -1652,12 +1716,6 @@ Route::middleware('auth:sanctum')
                     ]
                 )->whereNumber('electionId');
 
-                /*
-                |--------------------------------------------------------------------------
-                | CEK HAK PILIH
-                |--------------------------------------------------------------------------
-                */
-
                 Route::get(
                     '/elections/{id}/voting-status',
                     [
@@ -1674,12 +1732,6 @@ Route::middleware('auth:sanctum')
                     ]
                 )->whereNumber('id');
 
-                /*
-                |--------------------------------------------------------------------------
-                | KIRIM SUARA
-                |--------------------------------------------------------------------------
-                */
-
                 Route::post(
                     '/elections/{id}/vote',
                     [
@@ -1688,12 +1740,6 @@ Route::middleware('auth:sanctum')
                     ]
                 )->whereNumber('id');
 
-                /*
-                |--------------------------------------------------------------------------
-                | HASIL PEMILIHAN
-                |--------------------------------------------------------------------------
-                */
-
                 Route::get(
                     '/elections/{id}/results',
                     [
@@ -1701,23 +1747,5 @@ Route::middleware('auth:sanctum')
                         'results'
                     ]
                 )->whereNumber('id');
-
-                /*
-                |--------------------------------------------------------------------------
-                | KEUANGAN
-                |--------------------------------------------------------------------------
-                |
-                | TIDAK ADA ROUTE KEUANGAN UNTUK MAHASISWA.
-                |
-                */
-
-                /*
-                |--------------------------------------------------------------------------
-                | ARSIP SURAT
-                |--------------------------------------------------------------------------
-                |
-                | TIDAK ADA ROUTE ARSIP SURAT UNTUK MAHASISWA.
-                |
-                */
             });
     });

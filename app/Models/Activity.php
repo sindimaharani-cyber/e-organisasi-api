@@ -14,6 +14,7 @@ class Activity extends Model
 
     protected $fillable = [
         'created_by',
+
         'title',
         'description',
 
@@ -34,16 +35,42 @@ class Activity extends Model
         'registration_open',
 
         'completed_at',
+
+        /*
+         * Sertifikat
+         */
+        'certificate_template_path',
+        'certificate_name_x',
+        'certificate_name_y',
+        'certificate_font_size',
+        'certificate_font_color',
     ];
 
     protected $casts = [
         'activity_date' => 'date',
+
         'start_datetime' => 'datetime',
         'end_datetime' => 'datetime',
+
         'completed_at' => 'datetime',
+
         'registration_open' => 'boolean',
+
         'quota' => 'integer',
+
+        /*
+         * Konfigurasi sertifikat
+         */
+        'certificate_name_x' => 'integer',
+        'certificate_name_y' => 'integer',
+        'certificate_font_size' => 'integer',
     ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | RELATIONSHIP
+    |--------------------------------------------------------------------------
+    */
 
     public function creator(): BelongsTo
     {
@@ -53,4 +80,5 @@ class Activity extends Model
             'id'
         );
     }
+    
 }
