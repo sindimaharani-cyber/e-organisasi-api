@@ -6,12 +6,12 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
+COPY composer.json composer.lock ./
+
+RUN composer install --no-dev --optimize-autoloader --no-scripts
+
 COPY . .
 
-RUN composer install --no-dev --optimize-autoloader
-
-RUN php artisan config:cache
-RUN php artisan route:cache
-RUN php artisan view:cache
+RUN php artisan package:discover --ansi
 
 CMD ["frankenphp", "php-server", "--root", "public"]
