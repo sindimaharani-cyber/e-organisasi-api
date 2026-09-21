@@ -1,4 +1,5 @@
 [phases.setup]
-aptPkgs = [
-    "php8.4-gd"
+nixPkgs = [
+    "php84",
+    "php84Extensions.gd"
 ]
