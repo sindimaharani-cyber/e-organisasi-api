@@ -2,6 +2,8 @@ FROM dunglas/frankenphp:php8.4
 
 RUN install-php-extensions gd
 
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
 WORKDIR /app
 
 COPY . .
