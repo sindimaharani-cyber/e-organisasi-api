@@ -16,6 +16,11 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 
 COPY . .
 
-RUN php artisan optimize:clear
+RUN mkdir -p storage/framework/cache \
+    storage/framework/sessions \
+    storage/framework/views \
+    bootstrap/cache
+
+RUN chmod -R 775 storage bootstrap/cache
 
 CMD ["frankenphp", "php-server", "--root", "public"]
