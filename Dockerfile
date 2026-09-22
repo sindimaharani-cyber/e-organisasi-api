@@ -16,4 +16,6 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 
 COPY . .
 
+RUN php artisan optimize:clear
+
 CMD ["frankenphp", "php-server", "--root", "public"]
