@@ -24,4 +24,4 @@ RUN mkdir -p storage/framework/cache \
 
 RUN chmod -R 775 storage bootstrap/cache
 
-CMD ["frankenphp", "php-server", "--root", "public"]
+CMD ["sh", "-c", "frankenphp php-server --listen :${PORT} --root public"]

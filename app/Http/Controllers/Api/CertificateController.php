@@ -422,20 +422,33 @@ class CertificateController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | GD / FREETYPE
+        | GD / FREETYPE CHECK
         |--------------------------------------------------------------------------
         */
 
+        $gdStatus = [
+            'extension_loaded' => extension_loaded('gd'),
+            'imagecreatefrompng' => function_exists('imagecreatefrompng'),
+            'imagecreatefromjpeg' => function_exists('imagecreatefromjpeg'),
+            'imagettftext' => function_exists('imagettftext'),
+            'imagettfbbox' => function_exists('imagettfbbox'),
+        ];
+
+
+        \Log::info('CERTIFICATE GD CHECK', $gdStatus);
+
+
         if (
-            !function_exists('imagecreatefrompng') ||
-            !function_exists('imagecreatefromjpeg') ||
-            !function_exists('imagettftext') ||
-            !function_exists('imagettfbbox')
+            !$gdStatus['extension_loaded'] ||
+            !$gdStatus['imagecreatefrompng'] ||
+            !$gdStatus['imagecreatefromjpeg'] ||
+            !$gdStatus['imagettftext'] ||
+            !$gdStatus['imagettfbbox']
         ) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'PHP GD / FreeType belum aktif.',
+                'message' => 'PHP GD / FreeType belum aktif.',
+                'debug' => $gdStatus,
             ], 500);
         }
 
